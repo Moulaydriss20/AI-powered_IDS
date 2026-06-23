@@ -1,0 +1,8 @@
+#Ignore all datasets.
+datasets/
+*.csv
+*.joblib
+
+#Ignore all python cahces.
+__pycache__/
+*.pyc
