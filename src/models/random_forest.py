@@ -74,7 +74,7 @@ class RandomForest:
 
             final_predictions[i] = np.bincount(sample_votes).argmax()
 
-            print(f"Prediction {i}/{n_samples} complete", end="\r")
+            print(f"Prediction {i+1}/{n_samples} complete", end="\r")
 
         print()
         return final_predictions

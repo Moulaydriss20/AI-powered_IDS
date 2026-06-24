@@ -22,7 +22,8 @@ class IsolationForest:
             tree.fit(X[idxs])
 
             self.trees.append(tree)
-
+        print()
+        
         print("---Training ended\n")
 
     def score(self, X: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
@@ -31,9 +32,9 @@ class IsolationForest:
         avg_path_length = np.zeros(n_samples, dtype=np.float32)
 
         for i, row in enumerate(X):
-            print(f"Computing score {i+1}/{n_samples}", end="\r")
             avg_path_length[i] = np.mean([tree.path_length(row, node=tree.root) for tree in self.trees])
-
+            print(f"Computing score {i+1}/{n_samples} complete", end="\r")
+        print()
         
         scores = 2 ** (- avg_path_length / self._correction(self.subsample_size))
 

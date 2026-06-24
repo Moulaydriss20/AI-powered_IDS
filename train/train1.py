@@ -38,7 +38,7 @@ def main():
 
     end = time.perf_counter()
 
-    timer = end - start / 3600
+    timer = (end - start) / 3600
 
     predictions = rf.predict(X_test_scaled.to_numpy())
 
@@ -56,7 +56,9 @@ def main():
 
     print(f"Training time : {timer} h")
 
+    print("About to save model...")
     joblib.dump(rf, "datasets/processed/random_forest_model.joblib")
+    print("Model saved successfully.")
 
 if __name__ == '__main__':
     main()

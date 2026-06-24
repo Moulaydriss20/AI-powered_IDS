@@ -5,25 +5,31 @@ from src.models.isolation_forest import IsolationForest
 from src.preprocessing.cleaner import cleaner
 from src.preprocessing.encoder import Label_encoding
 from src.preprocessing.spliter import spliter
-from src.feature.scaler import feature_scaling
 from evaluate.metrics2 import evaluation
+from evaluate.metric3 import evaluation_curve
 
 def main():
     print("Loading data...")
     X_train_path = 'datasets/processed/X_train_path.joblib'
     y_train_path = 'datasets/processed/y_train_path.joblib'
+    rf_path = "datasets/processed/random_forest_model.joblib"
+    scaler_path = 'datasets/processed/scaler.joblib'
 
-
-    required_files = [X_train_path, y_train_path]
+    required_files = [X_train_path, y_train_path, scaler_path]
 
     if all(os.path.exists(f) for f in required_files):
         X_train = joblib.load(X_train_path)
         y_train = joblib.load(y_train_path)
+        rf = joblib.load(rf_path)
+        scaler = joblib.load(scaler_path)
 
     else:
-     X_train , _, y_train, _ = cleaner('datasets/raw/Wednesday-workingHours.pcap_ISCX.csv').pipe(Label_encoding).pipe(spliter)
+        X_train , _, y_train, _ = cleaner('datasets/raw/Wednesday-workingHours.pcap_ISCX.csv').pipe(Label_encoding).pipe(spliter)
+        scaler = joblib.load(scaler_path)
+        rf = joblib.load(rf_path)
+        
 
-    X_train_scaled = feature_scaling(X_train, None).to_numpy()
+    X_train_scaled = scaler.transform(X_train).to_numpy()
 
     forest = IsolationForest()
     print("--- Start Training ---")
@@ -33,9 +39,9 @@ def main():
     print("--- Start score computation ---")
     scores = forest.score(X_train_scaled)
 
-    print("--- Start prediction computation ---")
+    print("--- Start prediction ---")
     predicts = forest.predict(X_train_scaled, scores)
-    print("--- Prediction computation end ---")
+    print("--- Prediction ended ---")
 
     print(f"scores : \n{scores}")
 
@@ -57,6 +63,11 @@ def main():
     classification = evaluation(y_true_binary, predicts)
 
     print(f"Classification report :\n{classification}")
+
+    precisions, recalls, thresholds = evaluation_curve(X_train_scaled, y_samples, rf, forest, None)
+
+    for i in range(0, len(thresholds), len(thresholds)//20):
+        print(f"Threshold: {thresholds[i]:.4f} | Precision: {precisions[i]:.4f} | recall: {recalls[i]:.4f}")
 
     joblib.dump(forest, "datasets/processed/isolation_forest.joblib")
 

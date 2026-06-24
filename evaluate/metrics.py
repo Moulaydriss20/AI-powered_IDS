@@ -5,7 +5,7 @@ from typing import cast
 
 def evaluation(y: npt.NDArray[np.int32], preds: npt.NDArray[np.int16]):
 
-    accuracy = cast(float, np.mean(preds == y))
+    accuracy = np.mean(preds == y, dtype=float)
     classification = cast(str, classification_report(y, preds))
     confusion = confusion_matrix(y, preds)
 
