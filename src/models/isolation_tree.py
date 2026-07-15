@@ -33,9 +33,14 @@ class IsolationTree:
 
         if n_samples <= 1 or depth >= self.max_depth or np.all(X == X[0]):
             return Leaf(size=n_samples)
+        
 
         feature_idx = cast(int, np.random.choice(n_feature, replace=False))
+        feat_min, feat_max = np.min(X[:, feature_idx]), np.max(X[:, feature_idx])
         threshold = float(np.random.uniform(np.min(X[:, feature_idx]), np.max(X[:, feature_idx])))
+
+        if feat_min == feat_max:
+            return Leaf(size=n_samples)
 
         left_idx = np.where(X[:, feature_idx] <= threshold)[0]
         right_idx = np.where(X[:, feature_idx] > threshold)[0]
@@ -45,27 +50,41 @@ class IsolationTree:
 
         return Node(feature_idx, threshold, left, right, size= n_samples)
     
-    def path_length(self, X: npt.NDArray[np.float32], current_depth: int = 0, node: Node | Leaf | None = None) -> float:
-        if not self.root:
-            return 0
-        
+    def path_length(self, X: npt.NDArray[np.float32], current_depth: int = 0, node: Node | Leaf | None = None) -> npt.NDArray[np.float32]:
         if node is None:
-            node = self.root
+            lengths = np.full(X.shape[0], current_depth, dtype=np.float32)
+
+            return lengths
 
         if isinstance(node, Leaf):
-            if node.size > 1:
-                return float(current_depth + self._correction(node.size))
-            
-            return float(current_depth)
+            lengths = np.full(X.shape[0], current_depth + self._correction(node.size), dtype=np.float32)
+
+            return lengths
         
-        if X[node.feature_idx] <= cast(float, node.threshold):
-            return self.path_length(X, current_depth+1, node=node.left)
+        if node.feature_idx is None or node.threshold is None:
+            lengths = np.full(X.shape[0], current_depth, dtype=np.float32)
+
+            return lengths
         
-        return self.path_length(X, current_depth+1, node=node.right)
+        lengths = np.zeros(X.shape[0], dtype=np.float32)
+        
+        left_mask = X[:, node.feature_idx] <= node.threshold
+        right_mask = ~left_mask
+
+        if np.any(left_mask):
+            lengths[left_mask] = self.path_length(X[left_mask], current_depth+1, node=node.left)
+
+        if np.any(right_mask):
+            lengths[right_mask] = self.path_length(X[right_mask], current_depth+1, node=node.right)
+
+        return lengths
 
     def _correction(self, size: int) -> float:
         if size <= 1:
-            return 0
+            return 0.0
+        
+        if size == 2:
+            return 1.0
 
         return 2 * (np.log(size - 1) + 0.5772156649) - (2 * (size - 1) / size)
     

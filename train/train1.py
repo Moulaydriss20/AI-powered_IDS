@@ -38,7 +38,7 @@ def main():
 
     end = time.perf_counter()
 
-    timer = (end - start) / 3600
+    timer = (end - start) / 60
 
     predictions = rf.predict(X_test_scaled.to_numpy())
 

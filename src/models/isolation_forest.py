@@ -4,10 +4,10 @@ from typing import cast
 from src.models.isolation_tree import IsolationTree
 
 class IsolationForest:
-    def __init__(self, n_trees: int = 100, subsample_size: int = 256, contamination: float = 0.36) -> None:
+    def __init__(self, n_trees: int = 100, subsample_size: int = 256, score_threshold: float = 0.447) -> None:
         self.n_trees = n_trees
         self.subsample_size = subsample_size
-        self.contamination = contamination
+        self.score_threshold = score_threshold
         self.trees: list[IsolationTree] = []
 
     def fit(self, X: npt.NDArray[np.float32]) -> None:
@@ -27,18 +27,20 @@ class IsolationForest:
         print("---Training ended\n")
 
     def score(self, X: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
-        n_samples, _ = X.shape
+        all_paths = np.array([tree.path_length(X, node=tree.root) for tree in self.trees])
 
-        avg_path_length = np.zeros(n_samples, dtype=np.float32)
-
-        for i, row in enumerate(X):
-            avg_path_length[i] = np.mean([tree.path_length(row, node=tree.root) for tree in self.trees])
-            print(f"Computing score {i+1}/{n_samples} complete", end="\r")
-        print()
+        avg_path_length = np.mean(all_paths, axis=0)
         
-        scores = 2 ** (- avg_path_length / self._correction(self.subsample_size))
+        c_factor = self._correction(self.subsample_size)
+        if c_factor == 0:
+            scores = np.zeros(X.shape[0], dtype=np.float32)
 
-        print(f"---Score computation ended\n")
+            return scores
+        
+        scores = 2 ** (- avg_path_length / c_factor)
+
+        print("-- Score computation ended ---")
+
         return scores
 
     def _correction(self, size: int) -> float:
@@ -48,8 +50,7 @@ class IsolationForest:
         return 2 * (np.log(size - 1) + 0.5772156649) - (2 * (size - 1) / size)
     
     def predict(self, X: npt.NDArray[np.float32], scores : npt.NDArray[np.float32]) -> npt.NDArray[np.int16]:
-        threshold = np.percentile(scores, 100 * (1 - self.contamination))
 
-        predicts = np.where(scores >= threshold, -1, 1)
+        predicts = np.where(scores >= self.score_threshold, -1, 1)
         
         return predicts

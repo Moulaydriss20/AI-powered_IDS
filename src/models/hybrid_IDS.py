@@ -4,7 +4,7 @@ from src.models.random_forest import RandomForest
 from src.models.isolation_forest import IsolationForest
 
 class Hybrid_IDS():
-    def __init__(self, rf: RandomForest, iso_forest: IsolationForest, anomaly_threshold: float=0.77) -> None:
+    def __init__(self, rf: RandomForest, iso_forest: IsolationForest, anomaly_threshold: float=0.33) -> None:
         self.rf = rf
         self.iso_forest = iso_forest
         self.anomaly_threshold = anomaly_threshold
@@ -28,6 +28,6 @@ class Hybrid_IDS():
 
         return final_predict
     
-    def get_predictions(self, X:npt.NDArray[np.float32], rf: RandomForest, iso_forest: IsolationForest) -> tuple[npt.NDArray[np.int16], npt.NDArray[np.float32]]:
+    def get_predictions(self, X:npt.NDArray[np.float32]) -> tuple[npt.NDArray[np.int16], npt.NDArray[np.float32]]:
 
-        return rf.predict(X), iso_forest.score(X)
+        return self.rf.predict(X), self.iso_forest.score(X)

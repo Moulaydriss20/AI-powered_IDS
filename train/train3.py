@@ -9,12 +9,14 @@ from src.models.hybrid_IDS import Hybrid_IDS, RandomForest, IsolationForest
 from evaluate.metric3 import evaluation_curve, evaluation
 
 def tune_threshold(X_test: npt.NDArray[np.float32], y_test: npt.NDArray[np.int16], rf: RandomForest, iso_forest: IsolationForest) :
+    print("\n--- Analyse des Seuils d'Anomalie (Isolation Forest) ---")
 
     precisions, recalls, thresholds = evaluation_curve(X_test, y_test, rf, iso_forest, None)
 
     for i in range(0, len(thresholds), len(thresholds)//20):
         print(f"Threshold: {thresholds[i]:.4f} | Precision: {precisions[i]:.4f} | recall: {recalls[i]:.4f}")
 
+    return thresholds, precisions, recalls
 
 def visualize_tresholds(precisions: npt.NDArray[np.float32], recalls: npt.NDArray[np.float32], thresholds: npt.NDArray[np.float32], scores: npt.NDArray[np.float32]):
     data = {
@@ -51,7 +53,10 @@ def main():
 
     X_test_scaled = scaler.transform(X_test).to_numpy()
 
-    hybrid = Hybrid_IDS(rf, iso_forest)
+    #thresholds, precisions, recalls = tune_threshold(X_test_scaled, y_test.to_numpy(), rf, iso_forest)
+
+    best_anomaly_threshold = 0.77
+    hybrid = Hybrid_IDS(rf, iso_forest, best_anomaly_threshold)
 
     predicts = hybrid.predict(X_test_scaled)
 
@@ -60,10 +65,6 @@ def main():
     print(f"Accuracy: {Accuracy}")
     print(f"Classification report: {classification}")
     print(f"Confusion matrix: {confusion}")
-
-    tune_threshold(X_test_scaled, y_test, rf, iso_forest)
-
-    return
 
 if __name__ == "__main__":
     

@@ -20,7 +20,7 @@ def evaluation_curve(X: npt.NDArray[np.float32], y:npt.NDArray[np.int16], rf: Ra
 
     elif hybrid is not None:    
     
-        rf_predict, iso_forest_score =  hybrid.get_predictions(X, hybrid.rf, hybrid.iso_forest)
+        rf_predict, iso_forest_score =  hybrid.get_predictions(X)
 
     else : raise ValueError("Error : You must provide rf and iso_forest or an hybrid model")
 

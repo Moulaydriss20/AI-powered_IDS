@@ -7,13 +7,13 @@ class Node:
     #Node characteristics.
     def __init__(self,
                  feature_index: int | None,
-                 n_labels: int,
+                 n_samples: int,
                  gain: float ,
                  threshold: float | None ,
                  left: 'Leaf  | Node | None',
                  right: 'Leaf | Node | None') -> None:
         self.feature_index = feature_index
-        self.n_labels = n_labels
+        self.n_samples = n_samples
         self.gain = gain
         self.threshold = threshold
         self.left = left
@@ -24,9 +24,9 @@ class Leaf(Node):
     #Leaf characteristics.
     def __init__(self,
                  label: int,
-                 n_labels: int
+                 n_samples: int
                 ) -> None:
-        super().__init__(feature_index=None, n_labels=n_labels, gain=0, threshold=None, left=None, right=None)
+        super().__init__(feature_index=None, n_samples=n_samples, gain=0, threshold=None, left=None, right=None)
         self.label = label
 
 #Create a tree.
@@ -57,21 +57,21 @@ class DecisionTree:
 
         if n_labels == 1:
 
-            return Leaf(label=y[0], n_labels=n_labels)
+            return Leaf(label=y[0], n_samples=n_samples)
         
         if depth >= self.max_depth:
 
-            return Leaf(label=self._most_common_label(y), n_labels=n_labels)
+            return Leaf(label=self._most_common_label(y), n_samples=n_samples)
         
         if n_samples < self.min_sample_split:
 
-            return Leaf(label=self._most_common_label(y), n_labels=n_labels)
+            return Leaf(label=self._most_common_label(y), n_samples=n_samples)
         
         feature_idx, threshold, gain = self.best_split(X, y, self.n_features)
 
         if gain == 0:
         
-            return Leaf(label=self._most_common_label(y), n_labels=n_labels)
+            return Leaf(label=self._most_common_label(y), n_samples=n_samples)
 
         left_indx, right_indxs = self._split(X[:, feature_idx], threshold)
 
@@ -79,7 +79,7 @@ class DecisionTree:
         right = self._grow_tree(X[right_indxs], y[right_indxs],depth+1, n_feature)
 
 
-        return Node(feature_idx ,n_labels, gain, threshold, left, right)
+        return Node(feature_idx ,n_samples, gain, threshold, left, right)
 
     #Calculate the impurity of a node.
     def gini_impurity(self, y:npt.NDArray[np.int16]) -> float:
@@ -178,7 +178,7 @@ class DecisionTree:
             if isinstance(node, Leaf):
                 return
 
-            imp[node.feature_index] += node.gain * node.n_labels
+            imp[node.feature_index] += node.gain * node.n_samples
 
             if node.left:
                 _traverse(node.left, imp)
@@ -187,7 +187,7 @@ class DecisionTree:
         
         _traverse(self.root, importances)
 
-        total_samples = self.root.n_labels
+        total_samples = self.root.n_samples
 
         if total_samples > 0:
             importances /= total_samples
